@@ -24,6 +24,7 @@ in {
       dev = "#4b9bff";
       infra = "#49aa19";
       personal = "#d4b106";
+      social = "#eb7cff";
       web = "#d87a16";
       web-public = "#cb2b83";
       web-ephemeral = "#8bbb11";
@@ -413,6 +414,22 @@ in {
             exec 3<&-
             exec "$@"
           '';
+        };
+      };
+
+      social = {
+        hm.config = {
+          imports = base ++ [houseTitle portalUrls aspects.fluxer];
+          home.sessionVariables.NIXOS_OZONE_WL = "1";
+        };
+        exportDesktopEntries = true;
+        capabilities = {
+          gui.enable = true;
+          gpu.enable = true;
+          pulseAudio.enable = true;
+          namespacing.proc = true;
+          sessionDbus.talk = ["org.freedesktop.portal.*" "org.freedesktop.Notifications" "org.kde.StatusNotifierWatcher"];
+          landlock.connectTcpPorts = [443];
         };
       };
 
