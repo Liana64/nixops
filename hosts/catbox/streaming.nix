@@ -41,15 +41,18 @@ in {
     })
   ];
 
-  motd.status = [
-    ''
-      case $(${pkgs.curl}/bin/curl -s -m1 http://127.0.0.1:${port 0}/serverinfo || true) in
-        *SERVER_BUSY*) printf ' \e[32m●\e[0m sunshine streaming\n' ;;
-        *SERVER_FREE*) printf ' \e[32m●\e[0m sunshine idle\n' ;;
-        *) printf ' \e[31m●\e[0m sunshine down\n' ;;
-      esac
-    ''
-  ];
+  motd = {
+    status = [
+      ''
+        case $(${pkgs.curl}/bin/curl -s -m1 http://127.0.0.1:${port 0}/serverinfo || true) in
+          *SERVER_BUSY*) printf ' \e[32m●\e[0m sunshine streaming\n' ;;
+          *SERVER_FREE*) printf ' \e[32m●\e[0m sunshine idle\n' ;;
+          *) printf ' \e[31m●\e[0m sunshine down\n' ;;
+        esac
+      ''
+    ];
+    commands = [["ssh -L 8443:${home.hosts.catbox}:${port 1} ${config.networking.hostName}" "Sunshine web UI · https://localhost:8443"]];
+  };
 
   services.sunshine = {
     enable = true;
