@@ -420,7 +420,7 @@ in {
       social = {
         hm.config = {
           imports = base ++ [houseTitle portalUrls aspects.fluxer];
-          home.sessionVariables.NIXOS_OZONE_WL = "1";
+          home.sessionVariables.XDG_SESSION_TYPE = "wayland";
         };
         exportDesktopEntries = true;
         capabilities = {
@@ -429,7 +429,10 @@ in {
           pulseAudio.enable = true;
           namespacing.proc = true;
           sessionDbus.talk = ["org.freedesktop.portal.*" "org.freedesktop.Notifications" "org.kde.StatusNotifierWatcher"];
-          landlock.connectTcpPorts = [443];
+          landlock = {
+            connectTcpPorts = [443];
+            rwDirs = ["/dev/shm"];
+          };
         };
       };
 
