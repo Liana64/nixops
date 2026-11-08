@@ -1,0 +1,123 @@
+--- a/containments/homescreen/package/contents/ui/HomeHeader.qml
++++ b/containments/homescreen/package/contents/ui/HomeHeader.qml
+@@ -55,7 +55,7 @@
+     // Forward focus to first item
+     onActiveFocusChanged: {
+         if (activeFocus) {
+-            searchIndicator.forceActiveFocus();
++            favsIndicator.forceActiveFocus();
+         }
+     }
+ 
+@@ -81,16 +81,8 @@
+             Layout.alignment: Qt.AlignTop | Qt.AlignRight
+             spacing: Kirigami.Units.gridUnit
+ 
+-            Indicators.Search {
+-                id: searchIndicator
+-                KeyNavigation.right: favsIndicator
+-                KeyNavigation.tab: favsIndicator
+-            }
+-
+             Indicators.Favorites {
+                 id: favsIndicator
+-                KeyNavigation.left: searchIndicator
+-                KeyNavigation.backtab: searchIndicator
+                 KeyNavigation.right: settingsIndicator
+                 KeyNavigation.tab: settingsIndicator
+             }
+--- a/containments/homescreen/package/contents/ui/homeoverlay/MainColumn.qml
++++ b/containments/homescreen/package/contents/ui/homeoverlay/MainColumn.qml
+@@ -160,7 +160,7 @@
+                 Layout.fillWidth: true
+ 
+                 KeyNavigation.up: actionsRow
+-                KeyNavigation.down: searchButton
++                KeyNavigation.down: tasksButton.downItem
+ 
+                 text: i18n("Home")
+                 icon.name: "go-home-symbolic"
+@@ -170,26 +170,13 @@
+             }
+ 
+             Bigscreen.ButtonDelegate {
+-                id: searchButton
+-                Layout.fillWidth: true
+-
+-                KeyNavigation.down: tasksButton.downItem
+-
+-                text: i18n("Search")
+-                icon.name: "system-search-symbolic"
+-                onClicked: {
+-                    root.searchRequested();
+-                }
+-            }
+-
+-            Bigscreen.ButtonDelegate {
+                 id: tasksButton
+                 Layout.fillWidth: true
+ 
+                 property Item downItem: visible ? tasksButton : controllerButton.downItem
+-                property Item upItem: visible ? tasksButton : searchButton
++                property Item upItem: visible ? tasksButton : homeButton
+                 KeyNavigation.down: controllerButton.downItem
+-                KeyNavigation.up: searchButton
++                KeyNavigation.up: homeButton
+ 
+                 visible: showTasksButton
+                 text: i18nc("@action:button Opens an overview of all currently running apps", "Tasks")
+--- a/containments/homescreen/package/contents/ui/main.qml
++++ b/containments/homescreen/package/contents/ui/main.qml
+@@ -20,7 +20,6 @@
+ 
+ import "launcher"
+ import "homeoverlay"
+-import "search" as Search
+ 
+ ContainmentItem {
+     id: root
+@@ -80,14 +79,6 @@
+             }
+             tasksModel.minimizeAllTasks();
+         }
+-
+-        function onToggleSearch() {
+-            if (searchWindow.visible) {
+-                searchWindow.hideOverlay();
+-            } else {
+-                searchWindow.showOverlay();
+-            }
+-        }
+     }
+ 
+     Connections {
+@@ -98,10 +89,6 @@
+             homeOverlayWindow.openTasks();
+         }
+ 
+-        function onOpenSearchRequested() {
+-            searchWindow.showOverlay();
+-        }
+-
+         function onOpenHomeOverlayRequested() {
+             homeOverlayWindow.showOverlay();
+         }
+@@ -212,10 +199,6 @@
+         id: feedbackWindow
+     }
+ 
+-    Search.SearchWindow {
+-        id: searchWindow
+-    }
+-
+     FavoritesManager {
+         id: favsManagerWindowView
+     }
+@@ -224,7 +207,6 @@
+         id: homeOverlayWindow
+ 
+         onMinimizeAllTasksRequested: tasksModel.minimizeAllTasks()
+-        onSearchRequested: Plasmoid.openSearch()
+         onSettingsRequested: Plasmoid.openSettings()
+     }
+ 

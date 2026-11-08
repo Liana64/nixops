@@ -17,13 +17,14 @@ in {
     ./games.nix
     ./media.nix
     ./streaming.nix
+    ./syncthing.nix
   ];
 
   networking.hostName = "catbox";
   motd = {
     description = "living-room console and media client";
     commands = [
-      ["sudo systemctl restart display-manager" "restart Steam session"]
+      ["sudo systemctl restart display-manager" "restart TV session"]
       (with config.services.prometheus.exporters; [":${toString node.port} :${toString smartctl.port}" "node · smartctl exporters"])
     ];
   };

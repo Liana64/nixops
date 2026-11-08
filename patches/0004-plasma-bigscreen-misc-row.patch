@@ -1,0 +1,80 @@
+--- a/containments/homescreen/package/contents/ui/launcher/LauncherHome.qml
++++ b/containments/homescreen/package/contents/ui/launcher/LauncherHome.qml
+@@ -155,6 +155,12 @@
+ 
+         spacing: Kirigami.Units.largeSpacing * 3
+ 
++        readonly property var misc: @misc@
++
++        function isMisc(model, row, parent) {
++            return misc.indexOf(model.data(model.index(row, 0, parent), ApplicationListModel.ApplicationStorageIdRole)) !== -1;
++        }
++
+         DelegateListView {
+             id: favAppsView
+             // Recursively get the next visible view
+@@ -244,7 +250,7 @@
+                 filterRoleName: "ApplicationCategoriesRole"
+                 filterRowCallback: function (source_row, source_parent) {
+                     var cats = sourceModel.data(sourceModel.index(source_row, 0, source_parent), ApplicationListModel.ApplicationCategoriesRole);
+-                    return cats.indexOf("Game") === -1;
++                    return cats.indexOf("Game") === -1 && !launcherHomeColumn.isMisc(sourceModel, source_row, source_parent);
+                 }
+             }
+ 
+@@ -265,7 +271,7 @@
+         DelegateListView {
+             id: gamesView
+             property var currentViewUpwards: visible ? gamesView : appsView.currentViewUpwards
+-            property var currentViewDownwards: visible ? gamesView : null
++            property var currentViewDownwards: visible ? gamesView : miscView.currentViewDownwards
+ 
+             title: i18n("Games")
+             opacity: root.sectionOpacity(gamesView)
+@@ -278,7 +284,7 @@
+                 sourceModel: Plasmoid.applicationListModel
+                 filterRoleName: "ApplicationCategoriesRole"
+                 filterRowCallback: function (source_row, source_parent) {
+-                    return sourceModel.data(sourceModel.index(source_row, 0, source_parent), ApplicationListModel.ApplicationCategoriesRole).indexOf("Game") !== -1;
++                    return sourceModel.data(sourceModel.index(source_row, 0, source_parent), ApplicationListModel.ApplicationCategoriesRole).indexOf("Game") !== -1 && !launcherHomeColumn.isMisc(sourceModel, source_row, source_parent);
+                 }
+             }
+ 
+@@ -293,6 +299,37 @@
+             }
+ 
+             navigationUp: appsView.currentViewUpwards
++            navigationDown: miscView.currentViewDownwards
++        }
++
++        DelegateListView {
++            id: miscView
++            property var currentViewUpwards: visible ? miscView : gamesView.currentViewUpwards
++            property var currentViewDownwards: visible ? miscView : null
++
++            title: i18n("Misc")
++            opacity: root.sectionOpacity(miscView)
++            Behavior on opacity { OpacityAnimator { duration: Kirigami.Units.longDuration } }
++            visible: count > 0
++            enabled: count > 0
++            model: KItemModels.KSortFilterProxyModel {
++                sourceModel: Plasmoid.applicationListModel
++                filterRowCallback: function (source_row, source_parent) {
++                    return launcherHomeColumn.isMisc(sourceModel, source_row, source_parent);
++                }
++            }
++
++            currentIndex: 0
++            focus: visible && (gamesView.currentViewUpwards === root.navigationUp)
++            onActiveFocusChanged: if (activeFocus)
++                launcherHomeColumn.currentSection = miscView
++            delegate: Delegates.AppDelegate {
++                property var modelData: typeof model !== "undefined" ? model : null
++                running: root.isRunning(applicationStorageId)
++                onLongClick: root.requestOptions(applicationStorageId, text, icon.name, subtitle, null)
++            }
++
++            navigationUp: gamesView.currentViewUpwards
+             navigationDown: null
+         }
+     }

@@ -47,7 +47,7 @@
               inherit (f) label;
               path = "~/${f.path}";
               devices = lib.remove self f.devices;
-              inherit (sync) versioning;
+              versioning = f.versioning or sync.versioning;
             })
             folders;
 

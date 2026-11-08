@@ -105,7 +105,7 @@
     catbox = {
       system = "x86_64-linux";
       channel = inputs.nixpkgs-unstable;
-      aspects = base ++ ["audio" "motd" "networking" "noDefaults"];
+      aspects = base ++ ["audio" "files" "motd" "networking" "noDefaults"];
       home = false;
     };
     m1 = {

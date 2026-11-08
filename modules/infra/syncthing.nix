@@ -23,30 +23,39 @@ in {
         id = "DZMCSC2-3MUIPEU-SUXQXEH-OYRESED-DWAXB3H-O3ZTUUI-QN4VM4C-ZVUIHAB";
         addresses = ["tcp://${net.hstore.hosts.m1}:22000"];
       };
-      # catbox = {
-      #   id = "CATBOX-DEVICE-ID";
-      #   addresses = ["tcp://${net.home.hosts.catbox}:22000"];
-      # };
-      # deck.id = "DECK-DEVICE-ID";
+      catbox = {
+        id = "QDLCXGS-IU33KZD-HUE6ZZS-S7XHLD6-MJ5PAGJ-TJ62A7M-SU2JCTU-UDXHDAU";
+        addresses = ["tcp://${net.home.hosts.catbox}:22000"];
+      };
+      steam-deck = {
+        id = "L2M4ZBO-G5OB7S3-V6SVJO4-AGXCDBS-PN5PIJR-BEMBFHB-VYYZOHZ-6AIOAA7";
+        addresses = ["tcp://${net.home.hosts.steam-deck}:22000"];
+      };
     };
 
     folders = let
       mine = ["m1" "framework" "cluster"];
       maxine = ["m1" "maxine-framework"];
-      # games = ["m1" "catbox" "deck"];
+      games = ["m1" "catbox" "steam-deck"];
+      history = {
+        type = "staggered";
+        params.maxAge = toString (90 * 86400);
+      };
     in {
-      # "f3px7-gxjz7" = {
-      #   label = "RetroDECK Saves";
-      #   owner = "games";
-      #   path = "retrodeck/saves";
-      #   devices = games;
-      # };
-      # "zcmax-6gcj0" = {
-      #   label = "RetroDECK States";
-      #   owner = "games";
-      #   path = "retrodeck/states";
-      #   devices = games;
-      # };
+      "m6dg2-sze2f" = {
+        label = "RetroDECK";
+        owner = "games";
+        path = "retrodeck";
+        devices = games;
+        versioning = history;
+      };
+      "todzo-uawzg" = {
+        label = "Ace Combat 6";
+        owner = "games";
+        path = "games/Ace Combat 6";
+        devices = games;
+        versioning = history;
+      };
       "bddhy-7xeus" = {
         label = "${user.fullName} Projects";
         owner = user.name;

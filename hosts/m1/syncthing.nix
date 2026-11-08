@@ -37,7 +37,7 @@ in {
           inherit (f) label;
           path = "/tank/users/sync/${f.owner}/${baseNameOf f.path}";
           devices = lib.remove self f.devices;
-          inherit (sync) versioning;
+          versioning = f.versioning or sync.versioning;
         })
         folders;
     };

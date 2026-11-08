@@ -1,0 +1,11 @@
+--- a/inputhandler/devicewatcher.cpp
++++ b/inputhandler/devicewatcher.cpp
+@@ -25,6 +25,8 @@
+     QStringLiteral("irqbalance"),
+     QStringLiteral("inputattach"),
+     QStringLiteral("joystickwake"),
++    QStringLiteral("steam"),
++    QStringLiteral("steamwebhelper"),
+ };
+ 
+ DeviceWatcher::DeviceWatcher(QObject *parent)
