@@ -27,7 +27,7 @@
     etcd = ["Write:etcd"];
     matrix = ["Read:matrix" "Write:matrix" "List:matrix" "Tagging:matrix"];
     loki = ["Read:loki" "Write:loki" "List:loki"];
-    fluxer = ["Read:fluxer" "Write:fluxer" "List:fluxer" "Tagging:fluxer"];
+    fluxer = lib.concatMap (b: map (a: "${a}:${b}") ["Read" "Write" "List" "Tagging"]) ["fluxer" "fluxer-uploads" "fluxer-harvests" "fluxer-reports"];
   };
   key = name: k: config.sops.placeholder."seaweedfs/${name}/${k}";
 
