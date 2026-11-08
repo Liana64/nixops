@@ -2,7 +2,6 @@
 {user, ...}: {
   flake.modules.homeManager.flatpak = {lib, ...}: let
     overrides = {
-      "com.moonlight_stream.Moonlight".Context.devices = "!all;dri;input";
       "com.rustdesk.RustDesk".Context.filesystems = "!home;xdg-download";
       "org.gimp.GIMP".Context.devices = "!all;dri";
       "org.gnome.Calculator".Context.sockets = "!fallback-x11;!x11";
@@ -58,7 +57,6 @@
           org.gimp.GIMP
           org.localsend.localsend_app
           org.pulseaudio.pavucontrol
-          com.moonlight_stream.Moonlight
           com.rustdesk.RustDesk
           com.github.tchx84.Flatseal
           # com.prusa3d.PrusaSlicer

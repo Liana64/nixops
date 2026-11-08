@@ -32,6 +32,7 @@ in {
       agentic = "#13a8a8";
       media = "#597ef7";
       remote = "#2db7f5";
+      stream = "#36cfc9";
       tasks = "#ff85c0";
       tools = "#7d8597";
       passwords = "#a0522d";
@@ -571,6 +572,26 @@ in {
           namespacing.proc = true;
           sessionDbus.own = ["org.remmina.Remmina"];
           landlock.connectTcpPorts = [3389 5900];
+        };
+      };
+
+      stream = {
+        hm.config = {
+          imports = base ++ [houseTitle];
+          home.packages = [pkgs.moonlight-qt];
+          home.sessionVariables.SDL_JOYSTICK_DISABLE_UDEV = "1";
+        };
+        exportDesktopEntries = true;
+        capabilities = {
+          gui.enable = true;
+          gpu.enable = true;
+          pulseAudio.enable = true;
+          namespacing.proc = true;
+          # GameStream control plane; video, audio, input and mDNS are UDP, which landlock does not govern
+          landlock = {
+            connectTcpPorts = [47984 47989 48010];
+            deviceDirs = ["/dev/input"];
+          };
         };
       };
 
