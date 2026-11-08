@@ -1,5 +1,11 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   jovian.decky-loader.enable = true;
+
+  systemd.tmpfiles.rules = ["L+ /home/deck/retrodeck - - - - ${config.services.syncthing.settings.folders.m6dg2-sze2f.path}"];
 
   services.flatpak.enable = true;
   systemd.services.retrodeck = {
