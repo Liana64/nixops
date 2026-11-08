@@ -401,7 +401,8 @@ in {
           sessionDbus.talk = ["org.freedesktop.portal.*" "org.freedesktop.Notifications" "org.freedesktop.secrets" "org.kde.StatusNotifierWatcher"];
           sessionDbus.own = ["org.freedesktop.StatusNotifierItem-2-1"];
           landlock = {
-            connectTcpPorts = [443 1025 1143 6697];
+            # discord voice gateways use any cloudflare https port
+            connectTcpPorts = [443 1025 1143 2053 2083 2087 2096 6697 8443];
             rwDirs = personalDirs ++ ["/dev/shm" "/tmp"];
           };
           # libreoffice binds its instance pipe in a hard-coded /tmp; give the house its own
