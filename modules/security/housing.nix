@@ -636,6 +636,7 @@ in {
           landlock = {
             connectTcpPorts = [80 443];
             deviceFiles = hidraw "vial";
+            rwDirs = ["/dev/shm"];
           };
         };
       };

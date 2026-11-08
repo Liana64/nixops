@@ -65,6 +65,7 @@ in
         --run 'cd "$HOME"' \
         --prefix LD_LIBRARY_PATH : "${lib.getLib udev}/lib" \
         --set VIAL_PROJECT $out/share/vial \
+        --set-default QT_QPA_PLATFORM wayland \
         --set PYTHONPATH "$out/share/vial/shim:$out/share/vial/src/main/python" \
         --prefix QT_PLUGIN_PATH : "${lib.getBin libsForQt5.qtwayland}/${libsForQt5.qtbase.qtPluginPrefix}"
     '';
