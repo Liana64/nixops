@@ -386,7 +386,7 @@ in {
               aspects.thunderbird
               aspects.vesktop
             ];
-          home.packages = [pkgs.libreoffice];
+          home.packages = [pkgs.gimp pkgs.libreoffice];
           home.sessionVariables = {
             NIXOS_OZONE_WL = "1";
             XDG_SESSION_TYPE = "wayland";

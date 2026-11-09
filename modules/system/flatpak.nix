@@ -3,7 +3,6 @@
   flake.modules.homeManager.flatpak = {lib, ...}: let
     overrides = {
       "com.rustdesk.RustDesk".Context.filesystems = "!home;xdg-download";
-      "org.gimp.GIMP".Context.devices = "!all;dri";
       "org.gnome.Calculator".Context.sockets = "!fallback-x11;!x11";
       "org.gnome.Calendar".Context.sockets = "!fallback-x11;!x11";
       "org.gnome.Snapshot".Context.sockets = "!fallback-x11;!x11";
@@ -54,7 +53,6 @@
           org.gnome.Characters
           org.gnome.Calendar
           dev.bragefuglseth.Fretboard
-          org.gimp.GIMP
           org.localsend.localsend_app
           org.pulseaudio.pavucontrol
           com.rustdesk.RustDesk
