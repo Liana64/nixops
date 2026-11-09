@@ -120,6 +120,7 @@ in {
         "org.kde.plasma-systemmonitor"
         "org.kde.plasma.bigscreen.uvcviewer"
         "org.kde.plasma.emojier"
+        "PCSX2"
         "plasma-bigscreen-swap-session"
         "protontricks"
         "thunar"
