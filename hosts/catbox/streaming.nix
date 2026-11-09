@@ -8,7 +8,7 @@
 }: let
   inherit (inputs.self.network) home clients;
   set = lib.concatStringsSep ", ";
-  peers = set ([home.subnet] ++ clients.${user.name});
+  peers = set ([home.subnet] ++ clients.ops);
   port = n: toString (config.services.sunshine.settings.port + n);
 in {
   # TCL 65S555 is HDMI 2.0 (600 MHz TMDS)
