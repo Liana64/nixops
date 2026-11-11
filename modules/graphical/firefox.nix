@@ -103,9 +103,12 @@
       "* * 3p-frame block"
     ];
   in {
-    options.firefox.role = lib.mkOption {
-      type = lib.types.enum ["secure" "public" "ephemeral"];
-      default = "secure";
+    options.firefox = {
+      role = lib.mkOption {
+        type = lib.types.enum ["secure" "public" "ephemeral"];
+        default = "secure";
+      };
+      portalFilePicker = lib.mkEnableOption "the portal file chooser";
     };
 
     config.programs.firefox = {
@@ -382,7 +385,10 @@
             # Wayland popup/menu fixes
             "widget.wayland.use-move-to-rect" = true;
             "widget.gtk.ignore-bogus-leave-notify" = 1;
-            "widget.use-xdg-desktop-portal.file-picker" = 0;
+            "widget.use-xdg-desktop-portal.file-picker" =
+              if config.firefox.portalFilePicker
+              then 1
+              else 0;
             "widget.use-xdg-desktop-portal.mime-handler" = 0;
           }
           // roleSettings.${role};

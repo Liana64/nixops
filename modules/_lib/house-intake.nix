@@ -1,4 +1,4 @@
-# @desc: house file promotion — read-only scan, copy-only promotion into ~/<xdg user dir>/<house>; PDF hand-off into a viewer house
+# @desc: house file promotion — read-only scan, copy-only promotion into ~/<xdg user dir>, never overwriting; PDF hand-off into a viewer house
 {
   pkgs,
   lib,
@@ -96,7 +96,7 @@
           fi
           case $mode in
           list) printf 'pending\t%s/%s\n' "$d" "$(clean "''${f#./}")" ;;
-          promote) promote "$f" "$HOME/$d/$house" && keep[$key]=1 || failed=1 ;;
+          promote) promote "$f" "$HOME/$d" && keep[$key]=1 || failed=1 ;;
           dismiss) keep[$key]=1 ;;
           esac
         done < <(find . -mindepth 1 -maxdepth 1 -type f -links 1 ! -name '.*' ! -name '*.part' ! -name '*.crdownload' -printf '%i %s %T@\0%p\0')
@@ -132,7 +132,7 @@
       Environment = "XDG_STATE_HOME=${state}";
       ProtectHome = "tmpfs";
       BindReadOnlyPaths = "-${home}/houses/${house}";
-      BindPaths = ["${state}/house-intake/${house}"] ++ lib.optionals (mode == "promote") (map (d: "${home}/${d}/${house}") dirs);
+      BindPaths = ["${state}/house-intake/${house}"] ++ lib.optionals (mode == "promote") (map (d: "${home}/${d}") dirs);
     };
 
   openPdf = {
