@@ -7,6 +7,7 @@
     inputs.disko.nixosModules.disko
     ./disko.nix
     ./network.nix
+    ./performance.nix
     ./vms
   ];
 
@@ -30,7 +31,7 @@
   motd.description = "Talos and lab hypervisor";
 
   users.users.${user.name} = {
-    uid = user.uid;
+    inherit (user) uid;
     openssh.authorizedKeys.keys = inputs.self.keys.${user.name};
   };
 
