@@ -37,6 +37,7 @@ in {
       tasks = "#ff85c0";
       tools = "#7d8597";
       passwords = "#a0522d";
+      research = "#d3adf7";
     };
 
     # landlock resolves the udev symlink at launch: plug the device in before starting the house
@@ -176,6 +177,7 @@ in {
     personalDirs = [notebook "$NIX_HOUSING_REAL_HOME/Documents" drop];
     dillo = "$NIX_HOUSING_REAL_HOME/.dillo";
     drop = "$NIX_HOUSING_REAL_HOME/houses/shared/drop";
+    papers = "$NIX_HOUSING_REAL_HOME/Documents/Papers";
     velesDir = "$NIX_HOUSING_REAL_HOME/houses/shared/veles";
 
     intake = import ../_lib/house-intake.nix {inherit pkgs lib hardening config;};
@@ -398,6 +400,7 @@ in {
           gpu.enable = true;
           pulseAudio.enable = true;
           namespacing.proc = true;
+          documentPortal.enable = true;
           sessionDbus.talk = ["org.freedesktop.portal.*" "org.freedesktop.Notifications" "org.freedesktop.secrets" "org.kde.StatusNotifierWatcher"];
           sessionDbus.own = ["org.freedesktop.StatusNotifierItem-2-1"];
           landlock = {
@@ -429,6 +432,7 @@ in {
           gpu.enable = true;
           pulseAudio.enable = true;
           namespacing.proc = true;
+          documentPortal.enable = true;
           sessionDbus.talk = ["org.freedesktop.portal.*" "org.freedesktop.Notifications" "org.kde.StatusNotifierWatcher"];
           landlock = {
             connectTcpPorts = [443];
@@ -459,16 +463,20 @@ in {
       };
 
       web = {
-        hm.config.imports =
-          base
-          ++ [
-            houseTitle
-            sharedDrop
-            aspects.chromium
-            aspects.firefox
-          ];
+        hm.config = {
+          imports =
+            base
+            ++ [
+              houseTitle
+              sharedDrop
+              aspects.chromium
+              aspects.firefox
+            ];
+          firefox.portalFilePicker = true;
+        };
         exportDesktopEntries = true;
         capabilities = lib.recursiveUpdate webCapabilities {
+          documentPortal.enable = true;
           landlock.connectTcpPorts =
             webCapabilities.landlock.connectTcpPorts
             ++ [
@@ -508,6 +516,7 @@ in {
               aspects.firefox
             ];
           firefox.role = "ephemeral";
+          firefox.portalFilePicker = true;
           programs.firefox.profiles.ephemeral.settings = {
             "network.proxy.type" = 1;
             "network.proxy.socks" = "file://${ephemeralSocket}";
@@ -521,6 +530,7 @@ in {
         capabilities = lib.recursiveUpdate webCapabilities {
           # loopback-only netns: the proxy socket is the only way out, for every protocol
           namespacing.net = true;
+          documentPortal.enable = true;
           landlock.connectTcpPorts = [];
           landlock.roDirs = ["$NIX_HOUSING_REAL_XDG_RUNTIME_DIR/${intake.pdfStage}"];
           execWrappers.ephemeralSession = lib.hm.dag.entryBetween ["namespacing"] ["dirSetup"] ''
@@ -643,6 +653,54 @@ in {
         };
       };
 
+      research = {
+        hm.config = {
+          imports = base ++ [houseTitle portalUrls sharedDrop];
+          home.packages = [pkgs.zotero];
+          home.file.".zotero/zotero/profiles.ini".text = lib.generators.toINI {} {
+            General.StartWithLastProfile = 1;
+            Profile0 = {
+              Name = "default";
+              IsRelative = 1;
+              Path = "default";
+              Default = 1;
+            };
+          };
+          home.file.".zotero/zotero/default/user.js".text = lib.concatStrings (lib.mapAttrsToList (k: v: "user_pref(${builtins.toJSON k}, ${builtins.toJSON v});\n") {
+            "app.update.enabled" = false;
+            "app.update.auto" = false;
+            "datareporting.healthreport.uploadEnabled" = false;
+            "datareporting.policy.dataSubmissionEnabled" = false;
+            "toolkit.telemetry.enabled" = false;
+            "toolkit.telemetry.unified" = false;
+            "toolkit.telemetry.server" = "";
+            "dom.security.https_only_mode" = true;
+            "network.dns.disablePrefetch" = true;
+            "network.prefetch-next" = false;
+            "network.predictor.enabled" = false;
+            "network.http.speculative-parallel-limit" = 0;
+            "network.captive-portal-service.enabled" = false;
+            "network.connectivity-service.enabled" = false;
+            "extensions.zotero.httpServer.enabled" = false;
+            "extensions.zotero.autoRecognizeFiles" = false;
+            "extensions.zotero.reportTranslationFailure" = false;
+            "extensions.zotero.automaticScraperUpdates" = false;
+          });
+        };
+        exportDesktopEntries = true;
+        capabilities = {
+          gui.enable = true;
+          gpu.enable = true;
+          namespacing.proc = true;
+          sessionDbus.talk = ["org.freedesktop.portal.*"];
+          landlock = {
+            connectTcpPorts = [443];
+            roDirs = ["$NIX_HOUSING_REAL_HOME/Documents"];
+            rwDirs = [drop papers] ++ map (d: "/mnt/m1/media/${d}") ["Books" "Papers" "Specifications"];
+          };
+        };
+      };
+
       tools = {
         hm.config = {
           imports = base ++ [houseTitle aspects.keyboard];
@@ -698,9 +756,10 @@ in {
         "d %h/houses/shared 0700 - - -"
         "d %h/houses/shared/drop 0700 - - -"
         "d %h/houses/shared/veles 0700 - - -"
+        "d %h/Documents/Papers 0700 - - -"
         "d %t/${intake.pdfStage} 0700 - - -"
       ]
-      ++ lib.concatMap (h: map (d: "d %h/${d}/${h} 0700 - - -") intake.dirs ++ ["d %S/house-intake/${h} 0700 - - -"]) intake.houses;
+      ++ map (h: "d %S/house-intake/${h} 0700 - - -") intake.houses;
 
     xdg.desktopEntries =
       lib.mapAttrs' (name: h:
