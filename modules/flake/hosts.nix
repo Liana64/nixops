@@ -96,7 +96,7 @@
   hosts = {
     framework = {
       system = "x86_64-linux";
-      aspects = laptop ++ ["maintenanceNotify" "remoteBuilds"];
+      aspects = laptop ++ ["maintenanceNotify" "perfTools" "remoteBuilds"];
     };
     portable = {
       system = "x86_64-linux";
