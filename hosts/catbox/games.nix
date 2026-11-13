@@ -26,6 +26,7 @@
         config.systemd.tmpfiles.settings.graphics-driver."/run/opengl-driver"."L+".argument
         config.environment.etc.fonts.source
       ];
+      games = config.services.syncthing.settings.folders.todzo-uawzg.path;
     })
     localsend
     pcsx2

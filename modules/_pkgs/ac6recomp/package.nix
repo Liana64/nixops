@@ -22,6 +22,7 @@
   zlib,
   closureInfo,
   roots ? [],
+  games,
 }: let
   pname = "ac6recomp";
   version = "1.0.0";
@@ -61,7 +62,7 @@
       dir="$data/ac6recomp"
       mkdir -p "$dir"
       shopt -s nullglob
-      isos=("$dir"/*.iso)
+      isos=(${lib.escapeShellArg games}/*.iso)
       run="''${XDG_RUNTIME_DIR:?}"
       env=()
       for v in DISPLAY XAUTHORITY LANG "''${!SDL_@}"; do
@@ -91,13 +92,14 @@
         --ro-bind-try "$run/pulse" "$run/pulse" \
         ''${XAUTHORITY:+--ro-bind "$XAUTHORITY" "$XAUTHORITY"} \
         --bind "$dir" "$dir" \
+        --bind ${lib.escapeShellArg games} ${lib.escapeShellArg games} \
         --chdir "$dir" \
         --setenv HOME "$dir" \
         --setenv XDG_DATA_HOME "$data" \
         --setenv XDG_RUNTIME_DIR "$run" \
         --setenv PATH /var/empty \
         "''${env[@]}" \
-        -- ${unwrapped}/libexec/ac6recomp "''${isos[0]:-$dir/assets}" "$@"
+        -- ${unwrapped}/libexec/ac6recomp "''${isos[0]:-$dir/assets}" --user_data_root ${lib.escapeShellArg games} "$@"
     '';
   };
 in
