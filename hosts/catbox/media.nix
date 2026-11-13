@@ -99,7 +99,7 @@ in {
   powerManagement.resumeCommands = "${tv}/bin/tv keypress/PowerOn; ${tv}/bin/tv launch/tvinput.hdmi1";
 
   environment = {
-    plasma6.excludePackages = with pkgs.kdePackages; [ark discover dolphin dolphin-plugins elisa gwenview kate khelpcenter konsole okular qrca spectacle];
+    plasma6.excludePackages = with pkgs.kdePackages; [ark discover dolphin dolphin-plugins elisa gwenview khelpcenter konsole okular qrca spectacle];
     etc."xdg/applications-blacklistrc".text = lib.generators.toINI {} {
       # plasma-bigscreen will overwrite this blacklist unless we make it immutable
       Applications."blacklist[$i]" = lib.concatStringsSep "," [
@@ -114,9 +114,11 @@ in {
         "org.kde.drkonqi.coredump.gui"
         "org.kde.kdeconnect.nonplasma"
         "org.kde.kdeconnect.sms"
+        "org.kde.kate"
         "org.kde.kinfocenter"
         "org.kde.kmenuedit"
         "org.kde.kwalletmanager"
+        "org.kde.kwrite"
         "org.kde.plasma.bigscreen.inputhandler"
         "org.kde.plasma-systemmonitor"
         "org.kde.plasma.bigscreen.uvcviewer"
