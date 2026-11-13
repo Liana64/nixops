@@ -45,6 +45,31 @@ mgsw: {
   link: ${unifi}
 }
 
+networks: {
+  shape: sql_table
+  label: Networks
+  LAN: "Untagged / 172.16.0.0/22"
+  CLUSTER: "VLAN 10 / 172.16.4.0/23"
+  CLUSTER_STORAGE: "VLAN 15 / 172.16.15.0/24"
+  STORAGE: "VLAN 20 / 172.16.20.0/24"
+  LAB: "VLAN 80 / 172.16.80.0/24"
+  OPS: "VLAN 95 / 172.16.95.0/24"
+  MGMT: "VLAN 99 / 172.16.99.0/24"
+  HOME: "VLAN 100 / 172.16.100.0/24"
+  WORK: "VLAN 101 / 192.168.101.0/24"
+  MX: "VLAN 110 / 172.16.110.0/24"
+  GUEST: "VLAN 120 / 172.16.120.0/24"
+  VPN_BRIDGE: "VLAN 140 / 172.16.140.0/24"
+  IOT: "VLAN 200 / 172.16.200.0/24"
+  WAN: "VLAN 3000 / 136.30.121.0/24"
+  PFSYNC: "VLAN 4000 / 10.255.254.0/29"
+  LAYER3: "VLAN 4040 / 10.255.253.0/24"
+  VPN: "wg0 / 172.17.0.0/24"
+  FAMILY_VPN: "wg1 / 172.17.100.0/24"
+}
+
+networks -> ISP: {style.opacity: 0}
+
 ISP -- edgesw: Uplink, Trunk (Untagged) {
   source-arrowhead.label: Uplink
   target-arrowhead.label: 1
