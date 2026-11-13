@@ -14,6 +14,7 @@ in {
     pkgs,
     colors,
     hardening,
+    flakePath,
     ...
   }: let
     mix = import ../_lib/mix.nix lib;
@@ -179,6 +180,17 @@ in {
     drop = "$NIX_HOUSING_REAL_HOME/houses/shared/drop";
     papers = "$NIX_HOUSING_REAL_HOME/Documents/Papers";
     velesDir = "$NIX_HOUSING_REAL_HOME/houses/shared/veles";
+    houseDir = name: config.housing.houses.${name}.houseHomeDir;
+    realProjects = "${config.home.homeDirectory}/Projects";
+    agenticWork = "${houseDir "agentic"}/work";
+    scratchHouses = ["agentic" "dev"];
+    scratchTree = {config, ...}: {
+      agentic.permissions.additionalDirectories = ["${config.home.homeDirectory}/scratch"];
+    };
+    projectsTree = {config, ...}: {
+      home.file.Projects.source = config.lib.file.mkOutOfStoreSymlink realProjects;
+      agentic.workspace = lib.mkForce realProjects;
+    };
 
     intake = import ../_lib/house-intake.nix {inherit pkgs lib hardening config;};
 
@@ -240,7 +252,10 @@ in {
     caldav = "calendar.milberry.org";
     caldavSocket = "tasks-caldav.sock";
   in {
-    imports = [inputs.nix-housing.homeManagerModules.default];
+    imports = [
+      inputs.nix-housing.homeManagerModules.default
+      {housing.houses = lib.genAttrs scratchHouses (_: {hm.config.imports = [scratchTree];});}
+    ];
 
     systemd.user.sockets.ephemeral-socks = {
       Unit = {
@@ -336,6 +351,7 @@ in {
             aspects.dvcs
             aspects.helix
             aspects.veles
+            projectsTree
           ];
         capabilities.namespacing.proc = true;
         capabilities.landlock =
@@ -557,6 +573,10 @@ in {
             aspects.devPackages
             aspects.helix
             aspects.veles
+            {
+              agentic.workspace = lib.mkForce agenticWork;
+              agentic.permissions.additionalDirectories = ["/nix/nixops"];
+            }
           ];
         capabilities = {
           namespacing.proc = true;
@@ -564,7 +584,7 @@ in {
             connectTcpPorts = [443];
             bindTcpPorts = [0];
             roFiles = ["/var/secrets/eek/gateway-key"];
-            rwDirs = [drop velesDir];
+            rwDirs = [drop velesDir "/nix/nixops"];
             # fixed-output derivations fetch daemon-side, outside landlock — the 443 limit is not an exfiltration boundary
             socketFiles = ["/nix/var/nix/daemon-socket/socket"];
           };
@@ -746,6 +766,20 @@ in {
       Service = intake.service {mode = "promote";};
     };
 
+    systemd.user.services.veles-accept = {
+      Unit.Description = "Apply staged veles patches into their init repos";
+      Service =
+        hardening.airgapped
+        // {
+          Type = "oneshot";
+          ExecStart = "${lib.getExe (import ../_lib/veles.nix pkgs)} accept";
+          Environment = "XDG_STATE_HOME=%S";
+          ProtectHome = "tmpfs";
+          BindPaths = ["%S/veles" "-%h/Projects"];
+          ReadWritePaths = ["-${flakePath}"];
+        };
+    };
+
     systemd.user.services."house-dismiss@" = {
       Unit.Description = "Mark pending %i house files as seen";
       Service = intake.service {mode = "dismiss";};
@@ -758,7 +792,9 @@ in {
         "d %h/houses/shared/veles 0700 - - -"
         "d %h/Documents/Papers 0700 - - -"
         "d %t/${intake.pdfStage} 0700 - - -"
+        "d ${agenticWork} 0700 - - -"
       ]
+      ++ map (h: "d ${houseDir h}/scratch 0700 - - 7d") scratchHouses
       ++ map (h: "d %S/house-intake/${h} 0700 - - -") intake.houses;
 
     xdg.desktopEntries =

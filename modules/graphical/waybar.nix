@@ -14,7 +14,7 @@
     intakeArgs = lib.escapeShellArgs intake.houses;
     machineSecrets = osConfig.machineSecrets or true;
     statusModules =
-      lib.optional (intake.houses != []) "custom/nix-housing"
+      lib.optionals (intake.houses != []) ["custom/nix-housing" "custom/veles"]
       ++ ["custom/harness-status" "custom/usbguard"]
       ++ lib.optional machineSecrets "custom/syncthing"
       ++ ["custom/caffeine"]
@@ -28,6 +28,7 @@
         (writeShellScriptBin "waybar-caffeine" (builtins.readFile ../../modules/bin/waybar-caffeine))
         (writeShellScriptBin "waybar-harness-status" (builtins.readFile ../../modules/bin/waybar-harness-status))
         (writeShellScriptBin "waybar-nix-housing" (builtins.readFile ../../modules/bin/waybar-nix-housing))
+        (writeShellScriptBin "waybar-veles" (builtins.readFile ../../modules/bin/waybar-veles))
         (writeShellScriptBin "waybar-countdown" (builtins.readFile ../../modules/bin/waybar-countdown))
         #(writeShellScriptBin "track-date" (builtins.readFile ../../modules/bin/track-date))
         (writeShellScriptBin "waybar-sysinfo" (builtins.readFile ../../modules/bin/waybar-sysinfo))
@@ -45,6 +46,7 @@
         wrapProgram $out/bin/waybar-syncthing    --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [curl jq gnused procps])}
         wrapProgram $out/bin/waybar-harness-status --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [jq coreutils gnused procps sway systemd])}
         wrapProgram $out/bin/waybar-nix-housing   --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [intake.intake jq inotify-tools coreutils gnused systemd])}
+        wrapProgram $out/bin/waybar-veles         --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [(import ../_lib/veles.nix pkgs) git jq inotify-tools coreutils gnused systemd])}
         wrapProgram $out/bin/waybar-countdown     --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [jq coreutils])}
         #wrapProgram $out/bin/track-date           --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [coreutils systemd])}
         wrapProgram $out/bin/waybar-sysinfo       --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [coreutils gnused gawk procps jq])}
@@ -150,6 +152,7 @@
         #custom-rebuild,
         #custom-reboot,
         #custom-nix-housing,
+        #custom-veles,
         #custom-harness-status {
           color: ${white};
           margin: 2px 2px;
@@ -181,7 +184,8 @@
         #custom-rebuild.failed,
         #custom-reboot.needed,
         #systemd-failed-units.degraded,
-        #custom-nix-housing.failed {
+        #custom-nix-housing.failed,
+        #custom-veles.failed {
           color: ${red};
         }
 
@@ -222,6 +226,7 @@
 
         #status #custom-harness-status,
         #status #custom-nix-housing,
+        #status #custom-veles,
         #status #custom-usbguard,
         #status #custom-syncthing,
         #status #custom-vpn,
@@ -241,6 +246,7 @@
 
         #status #custom-harness-status:hover,
         #status #custom-nix-housing:hover,
+        #status #custom-veles:hover,
         #status #custom-usbguard:hover,
         #status #custom-syncthing:hover,
         #status #custom-vpn:hover,
@@ -455,6 +461,15 @@
             format = "{}";
             on-click = "${app}/bin/waybar-nix-housing promote ${intakeArgs}";
             on-click-right = "${app}/bin/waybar-nix-housing dismiss ${intakeArgs}";
+          };
+
+          "custom/veles" = {
+            exec = "${app}/bin/waybar-veles watch";
+            restart-interval = 5;
+            return-type = "json";
+            format = "{}";
+            on-click = "${app}/bin/waybar-veles accept";
+            on-click-right = "${app}/bin/waybar-veles deny";
           };
 
           "sway/workspaces" = {

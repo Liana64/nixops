@@ -1,12 +1,6 @@
 # @desc: transmit change sets between nix houses
 {...}: {
   flake.modules.homeManager.veles = {pkgs, ...}: {
-    home.packages = [
-      (pkgs.writeShellApplication {
-        name = "veles";
-        runtimeInputs = with pkgs; [git gnutar coreutils findutils];
-        text = builtins.readFile ../bin/veles;
-      })
-    ];
+    home.packages = [(import ../_lib/veles.nix pkgs)];
   };
 }

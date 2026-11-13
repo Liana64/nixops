@@ -1,6 +1,7 @@
 VELES_ROOT="${VELES_ROOT:-${NIX_HOUSING_REAL_HOME:-$HOME}/houses/shared/veles}"
 WORK_ROOT="${VELES_WORK_ROOT:-$HOME/work}"
-readonly VELES_ROOT WORK_ROOT
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/veles"
+readonly VELES_ROOT WORK_ROOT STATE
 shopt -s nullglob
 
 usage() {
@@ -12,6 +13,9 @@ veles — transmit change sets between nix houses using patches
   veles update           merge the latest init into the current work dir
   veles deliver          emit a patch of all work dir changes since its init
   veles apply [patch]    apply a patch (default: newest for this repo)
+  veles stage            copy each project's newest unhandled patch into host state
+  veles accept           apply every staged patch into its init repo
+  veles deny             mark every staged patch handled without applying
   veles list             show inits and patches
   veles prune [days]     drop patches older than days (14) and all but latest inits
 EOF
@@ -53,7 +57,7 @@ tree_of() {
 }
 
 cmd_init() {
-  local name rev dir stage
+  local name rev dir stage origin
   enter_top
   name=$(basename "$PWD")
   rev=$(git rev-parse --short HEAD)
@@ -66,6 +70,10 @@ cmd_init() {
     mv "$stage" "$dir/$rev"
   fi
   ln -sfn "$rev" "$dir/latest"
+  mkdir -p "$STATE/origins"
+  origin=$(cat "$STATE/origins/$name" 2>/dev/null) || origin=$PWD
+  [ "$origin" = "$PWD" ] || printf 'veles: %s now applies into %s, was %s\n' "$name" "$PWD" "$origin" >&2
+  printf '%s\n' "$PWD" >"$STATE/origins/$name"
   printf 'inited %s@%s\n' "$name" "$rev"
 }
 
@@ -150,6 +158,79 @@ cmd_apply() {
   printf 'applied, uncommitted — review with git status && git diff HEAD\n'
 }
 
+newest_patch() {
+  local dir="$VELES_ROOT/patches/$1" ps i p
+  [ -L "$dir" ] && return 1
+  ps=("$dir"/*.patch)
+  for ((i = ${#ps[@]} - 1; i >= 0; i--)); do
+    p=${ps[i]##*/}
+    [[ $p =~ ^[0-9]{8}-[0-9]{6}-[0-9a-f]+\.patch$ && -f ${ps[i]} && ! -L ${ps[i]} ]] && { printf '%s\n' "$p"; return; }
+  done
+  return 1
+}
+
+staged_name() {
+  local f=${1##*/}
+  printf '%s\n' "${f%@*}"
+}
+
+cmd_stage() {
+  local origin name p handled f
+  mkdir -p "$STATE/staged"
+  for origin in "$STATE/origins"/*; do
+    name=${origin##*/}
+    p=$(newest_patch "$name") || continue
+    handled=$(cat "$STATE/handled/$name" 2>/dev/null) || handled=
+    f="$STATE/staged/$name@$p"
+    if [[ ! $p > $handled ]]; then
+      rm -f "$STATE/staged/$name"@[0-9]*.patch
+      continue
+    fi
+    if [ ! -f "$f" ]; then
+      rm -f "$STATE/staged/$name"@[0-9]*.patch "$STATE/failed/$name"
+      cp "$VELES_ROOT/patches/$name/$p" "$f.part"
+      mv "$f.part" "$f"
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$name" "$(cat "$origin")" "$f" "$(cat "$STATE/failed/$name" 2>/dev/null)"
+  done
+}
+
+handle() {
+  mkdir -p "$STATE/handled"
+  printf '%s\n' "${2##*@}" >"$STATE/handled/$1"
+  rm -f "$2" "$STATE/failed/$1"
+}
+
+accept_one() (
+  name=$1 f=$2
+  fail() {
+    mkdir -p "$STATE/failed"
+    printf '%s\n' "$*" >"$STATE/failed/$name"
+    exit 1
+  }
+  repo=$(cat "$STATE/origins/$name") || fail "no origin recorded"
+  cd "$repo" || fail "$repo unreachable from veles-accept"
+  [ -z "$(git status --porcelain)" ] || fail "$repo has uncommitted changes"
+  git apply --3way "$f" || fail "conflicts in $repo; resolve, then deny to clear"
+  handle "$name" "$f"
+  printf 'applied %s -> %s\n' "${f##*@}" "$repo"
+)
+
+cmd_accept() {
+  local f rc=0
+  for f in "$STATE/staged"/*@*.patch; do
+    accept_one "$(staged_name "$f")" "$f" || rc=1
+  done
+  return "$rc"
+}
+
+cmd_deny() {
+  local f
+  for f in "$STATE/staged"/*@*.patch; do
+    handle "$(staged_name "$f")" "$f"
+  done
+}
+
 cmd_list() {
   local dir rev
   printf 'inits:\n'
@@ -179,6 +260,9 @@ main() {
     update) cmd_update ;;
     deliver) cmd_deliver ;;
     apply) [ $# -le 2 ] || { usage >&2; exit 1; }; cmd_apply "${2:-}" ;;
+    stage) cmd_stage ;;
+    accept) cmd_accept ;;
+    deny) cmd_deny ;;
     list) cmd_list ;;
     prune) cmd_prune "${2:-}" ;;
     -h | --help) usage ;;

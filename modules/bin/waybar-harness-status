@@ -1,24 +1,36 @@
 #!/bin/sh
-# @desc: waybar icon — dim dot while harness sessions run, white when one awaits input (flags in $XDG_RUNTIME_DIR/harness-status)
+# @desc: waybar icon — dim dot while harness sessions run, white when one awaits input (flags in $XDG_RUNTIME_DIR/harness-status and each house's runtime dir)
 
-dir="${XDG_RUNTIME_DIR:-/tmp}/harness-status"
+run=${XDG_RUNTIME_DIR:-/tmp}
+flags() {
+  for f in "$run"/harness-status/* "$run"/house-*/harness-status/*; do
+    [ -e "$f" ] && printf '%s\n' "$f"
+  done
+}
+
+pid_namespaced() {
+  case $1 in "$run"/house-*) return 0 ;; esac
+  return 1
+}
 
 if [ "$1" = clear ]; then
-  for f in "$dir"/*; do
-    [ -e "$f" ] && sed -i '3s/.*/running/' "$f"
-  done
+  flags | while read -r f; do sed -i '3s/.*/running/' "$f"; done
   systemctl --user kill -s RTMIN+11 --kill-whom=main waybar.service 2>/dev/null
   exit 0
 fi
 
 if [ "$1" = focus ]; then
-  latest=$(for f in "$dir"/*; do
-    [ -e "$f" ] || continue
+  latest=$(flags | while read -r f; do
     state=$(sed -n 3p "$f")
     [ "$state" = awaiting ] || state=running
     printf '%s %s %s\n' "$state" "$(stat -c %Y "$f")" "$f"
   done | sort -k1,1 -k2,2rn | head -n1 | cut -d' ' -f3-)
   [ -n "$latest" ] || exit 0
+  if pid_namespaced "$latest"; then
+    house=${latest#"$run"/}
+    swaymsg "[app_id=\"${house%%/*}\"] focus" >/dev/null 2>&1
+    exit 0
+  fi
   tree=$(swaymsg -t get_tree 2>/dev/null) || exit 0
   wpid=$(sed -n 1p "$latest")
   while [ -n "$wpid" ] && [ "$wpid" != 1 ]; do
@@ -38,12 +50,11 @@ hide() {
   exit 0
 }
 
-[ -d "$dir" ] || hide
 cls=""
 tips=""
-for f in "$dir"/*; do
-  [ -e "$f" ] || continue
+for f in $(flags); do
   pid=$(sed -n 1p "$f")
+  pid_namespaced "$f" && pid=
   case $pid in
   "" | *[!0-9]*) ;;
   *) kill -0 "$pid" 2>/dev/null || {

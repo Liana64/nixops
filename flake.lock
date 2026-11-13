@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793973107,
-        "narHash": "sha256-PImOoLUirhEWNB0WyO4Q7JfJOSn8QUyaCpl0VR2Yo6I=",
+        "lastModified": 1794539626,
+        "narHash": "sha256-9GAuaybmEjjw7J9urnwT2MA9DmRwcbvB8WYbkAnpdDA=",
         "ref": "refs/heads/main",
-        "rev": "abe7dc935a60caf8e80081d9381fb3b636e96116",
-        "revCount": 9,
+        "rev": "867a84bf14cf0fa305305b50b463d8c3b8bbd427",
+        "revCount": 12,
         "type": "git",
         "url": "ssh://git@git.milberry.org/liana/agentic.git"
       },
@@ -427,11 +427,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793262559,
-        "narHash": "sha256-UlCGeyKKt4eeY8VpPJFf4EXXzSM4eoG1FJL9xXj2gBk=",
+        "lastModified": 1794127700,
+        "narHash": "sha256-w+U7zRXJvnIgPuxBx1ZqK0kBBRdb/cqPOKRThQzIw2E=",
         "owner": "Jovian-Experiments",
         "repo": "Jovian-NixOS",
-        "rev": "da68c2038839af4413fadb2b69b591893abddc74",
+        "rev": "34aa19053d730b023e35cf852976aef86fdce219",
         "type": "github"
       },
       "original": {

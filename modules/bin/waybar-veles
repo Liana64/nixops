@@ -1,0 +1,44 @@
+#!/bin/sh
+# @desc: waybar icon — veles patches staged for the host; click applies each into its init repo, right-click denies
+
+case ${1:-watch} in
+accept) exec systemctl --user --no-block start veles-accept.service ;;
+deny) exec veles deny ;;
+watch) ;;
+*) exit 64 ;;
+esac
+
+root=${VELES_ROOT:-$HOME/houses/shared/veles}
+state=${XDG_STATE_HOME:-$HOME/.local/state}/veles
+mkdir -p "$root/patches" "$state"
+tab=$(printf '\t')
+
+render() {
+  veles stage | while IFS=$tab read -r name repo patch failed; do
+    printf 'H\t%s\t%s\t%s\n' "$name" "$repo" "$failed"
+    git apply --stat --summary "$patch" | sed 's/^ */B\t/'
+  done | jq -Rsc '
+    def risky: test("^(create|delete|mode change|rename|copy|rewrite) |files? changed")
+      or test("(^|/)\\.|(^|/)(flake\\.(nix|lock)|[Jj]ustfile|Makefile|build\\.rs|package\\.json|Cargo\\.toml)[ |]|\\.(sh|just)[ |]");
+    split("\n") | map(select(. != "") | split("\t")) as $rows
+    | [$rows[] | select(.[0] == "H")] as $heads
+    | ($heads | length) as $n
+    | if $n == 0 then {text: ""} else
+        [$rows[] | if .[0] == "H"
+          then {keep: true, t: ("\(.[1]) → \(.[2])" + (if (.[3] // "") != "" then "\n  failed: \(.[3])" else "" end))}
+          else {keep: (.[1] | risky), t: "  \(.[1])"} end] as $lines
+        | ([$lines[] | select(.keep | not)] | length) as $plain
+        | [foreach $lines[] as $l (0; if $l.keep then . else . + 1 end; if $l.keep or . <= 30 then $l.t else empty end)] as $shown
+        | ("\($n) staged\n" + ($shown | join("\n"))
+            + (if $plain > 30 then "\n… \($plain - 30) more plain files hidden; dotfiles, build entry points, mode changes always shown" else "" end)
+          | gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) as $t
+        | {text: "±", class: (if any($heads[]; (.[3] // "") != "") then "failed" else "pending" end), tooltip: $t}
+      end'
+}
+
+while :; do
+  render
+  inotifywait -qq -r -t 30 -e create,delete,moved_to,moved_from,close_write "$root/patches" "$state"
+  [ $? -eq 1 ] && sleep 5
+  sleep 0.3
+done
