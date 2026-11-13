@@ -36,7 +36,8 @@ in {
             (o.postPatch or "")
             + ''
               substituteInPlace containments/homescreen/package/contents/ui/launcher/LauncherHome.qml \
-                --replace-fail @misc@ '${builtins.toJSON ["steam.desktop" "systemsettings.desktop" "org.kde.kdeconnect.app.desktop"]}'
+                --replace-fail @misc@ '${builtins.toJSON ["steam.desktop" "systemsettings.desktop" "org.kde.kdeconnect.app.desktop" "syncthing-ui.desktop" "thunar.desktop"]}' \
+                --replace-fail 'visible: Plasmoid.configuration.showRecent && count > 0' 'visible: false'
             '';
         });
       });
@@ -123,7 +124,6 @@ in {
         "PCSX2"
         "plasma-bigscreen-swap-session"
         "protontricks"
-        "thunar"
         "thunar-bulk-rename"
         "thunar-settings"
       ];
