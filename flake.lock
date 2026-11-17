@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794539626,
-        "narHash": "sha256-9GAuaybmEjjw7J9urnwT2MA9DmRwcbvB8WYbkAnpdDA=",
+        "lastModified": 1794796174,
+        "narHash": "sha256-Jf5cQMZXL/zeVnz5hj0QR0ygXyaXx/kAdi6uL9iTXts=",
         "ref": "refs/heads/main",
-        "rev": "867a84bf14cf0fa305305b50b463d8c3b8bbd427",
-        "revCount": 12,
+        "rev": "fc2de4a96cf621ff690886ce81ca1d14df92d3f2",
+        "revCount": 13,
         "type": "git",
         "url": "ssh://git@git.milberry.org/liana/agentic.git"
       },
@@ -595,11 +595,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1794042290,
-        "narHash": "sha256-ziZn2PvCJE5JEEpqTdxXwJpPB+L3YqoCpTAMCzyaP3U=",
+        "lastModified": 1794537146,
+        "narHash": "sha256-Wpz/7x/YWnDIBu7yj6ixe8j6fIMsidd9Y+o1PqPF3iM=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "f4a03c008967841f2a0b3cb7c436fc6fc31671f6",
+        "rev": "d5cc6833999746cffdfe0598f7bc801a57b887a9",
         "type": "github"
       },
       "original": {
