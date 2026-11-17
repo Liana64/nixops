@@ -43,6 +43,7 @@ in {
 
     # landlock resolves the udev symlink at launch: plug the device in before starting the house
     hidraw = device: map (n: "/dev/${device}-hidraw${toString n}") (lib.range 0 15);
+    video = map (n: "/dev/video${toString n}") (lib.range 0 7);
 
     houseTitle = {
       programs.zsh = {
@@ -499,7 +500,7 @@ in {
               (lib.toInt (lib.last (lib.splitString ":" config.services.syncthing.guiAddress)))
               config.d2.watchPort
             ];
-          landlock.deviceFiles = map (n: "/dev/hidraw${toString n}") (lib.range 0 15);
+          landlock.deviceFiles = map (n: "/dev/hidraw${toString n}") (lib.range 0 15) ++ video;
         };
       };
 
@@ -518,7 +519,7 @@ in {
         exportDesktopEntries = true;
         capabilities = lib.recursiveUpdate webCapabilities {
           sessionDbus.talk = ["org.freedesktop.Notifications"];
-          landlock.deviceFiles = ["/dev/video0" "/dev/video1"];
+          landlock.deviceFiles = video;
         };
       };
 

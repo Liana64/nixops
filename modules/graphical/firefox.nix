@@ -47,7 +47,6 @@
 
     roleSettings = {
       secure = {
-        "permissions.default.camera" = 2;
         "permissions.default.microphone" = 2;
         "media.eme.enabled" = false;
         "media.peerconnection.enabled" = false;
