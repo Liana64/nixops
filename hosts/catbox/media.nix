@@ -16,6 +16,20 @@
       desktopName = name;
     };
   webapp = name: icon: url: tile name icon "plasma-bigscreen-webapp --name ${name} ${url}";
+  steamosctl = "${pkgs.jovianPackages.steamos-manager}/bin/steamosctl";
+  sessionToggle = pkgs.writeShellScript "session-toggle" ''
+    if ${pkgs.systemd}/bin/systemctl --user -q is-active gamescope-session.service
+    then exec ${steamosctl} switch-to-desktop-mode
+    else exec ${steamosctl} switch-to-game-mode
+    fi
+  '';
+  shortcut = name: "${pkgs.systemd}/bin/busctl --user call org.kde.kglobalaccel /component/plasmashell org.kde.kglobalaccel.Component invokeShortcut s '${name}'";
+  flircKeys = pkgs.writeText "flirc-keys.conf" ''
+    KEY_PROG1 1 ${sessionToggle}
+    KEY_PROG2 1 ${shortcut "Toggle Bigscreen Home Overlay"}
+    KEY_PROG3 1 ${shortcut "Toggle Bigscreen Settings"}
+  '';
+  flirc = ''ATTRS{idVendor}=="20a0", ATTRS{idProduct}=="0006"'';
   icons = {
     roku = pkgs.runCommand "roku.svg" {} ''
       sed 's/<svg /<svg fill="#6F1AB1" /' ${pkgs.fetchurl {
@@ -31,6 +45,7 @@ in {
     (_: prev: {
       kdePackages = prev.kdePackages.overrideScope (_: p: {
         plasma-bigscreen = p.plasma-bigscreen.overrideAttrs (o: {
+          buildInputs = lib.remove prev.libcec o.buildInputs;
           patches = (o.patches or []) ++ [../../patches/0004-plasma-bigscreen-misc-row.patch ../../patches/0005-plasma-bigscreen-ignore-steam.patch ../../patches/0006-plasma-bigscreen-remove-search.patch];
           postPatch =
             (o.postPatch or "")
@@ -41,6 +56,9 @@ in {
             '';
         });
       });
+      jellyfin-desktop = prev.jellyfin-desktop.overrideAttrs (o: {
+        cmakeFlags = (o.cmakeFlags or []) ++ ["-DENABLE_CEC=OFF"];
+      });
     })
   ];
   programs.kde-pim.enable = false;
@@ -50,6 +68,22 @@ in {
     displayManager = {
       sessionPackages = [pkgs.kdePackages.plasma-bigscreen];
       defaultSession = lib.mkForce config.jovian.steam.desktopSession;
+    };
+    udev = {
+      packages = [
+        (pkgs.writeTextDir "lib/udev/rules.d/70-flirc.rules" ''
+          ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ${flirc}, ATTR{power/wakeup}="enabled", ATTR{../power/wakeup}="enabled"
+          SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_KEYBOARD}=="1", ${flirc}, SYMLINK+="input/flirc", TAG+="uaccess", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="flirc-keys.service"
+        '')
+      ];
+      extraHwdb = ''
+        evdev:input:b0003v20A0p0006*
+         KEYBOARD_KEY_7004a=homepage
+         KEYBOARD_KEY_70041=sleep
+         KEYBOARD_KEY_70042=prog1
+         KEYBOARD_KEY_70043=prog2
+         KEYBOARD_KEY_70044=prog3
+      '';
     };
     sunshine.settings.global_prep_cmd = builtins.toJSON [
       {
@@ -75,19 +109,32 @@ in {
       partOf = ["gamescope-session.service"];
       serviceConfig.ExecStart = "${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnectd";
     };
+    user.services.flirc-keys = {
+      description = "Flirc remote actions";
+      bindsTo = ["dev-input-flirc.device"];
+      after = ["dev-input-flirc.device"];
+      unitConfig.ConditionUser = "home";
+      serviceConfig = {
+        ExecStart = "${pkgs.triggerhappy}/bin/thd --triggers ${flircKeys} --deviceglob /dev/input/flirc";
+        NoNewPrivileges = true;
+        LockPersonality = true;
+        RestrictRealtime = true;
+        RestrictAddressFamilies = "AF_UNIX";
+        SystemCallArchitectures = "native";
+      };
+    };
     user.services.gamescope-session.serviceConfig.ExecStartPre = "-${pkgs.systemd}/bin/systemctl --user stop app-org.kde.plasma.bigscreen.inputhandler@*.service";
     tmpfiles.rules = [
       "D /home/home/.local/share/applications 0555 home users -"
       "L+ /usr/share/wallpapers - - - - /run/current-system/sw/share/wallpapers"
     ];
-    services.tv-input = {
+    user.services.tv-input = {
       description = "Wake the TV and switch it to catbox";
-      wantedBy = ["multi-user.target"];
-      wants = ["network-online.target"];
-      after = ["network-online.target"];
+      wantedBy = ["cecd.service"];
+      after = ["cecd.service"];
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = ["-${tv}/bin/tv keypress/PowerOn" "${tv}/bin/tv launch/tvinput.hdmi1"];
+        ExecStart = "${pkgs.systemd}/bin/busctl --user call com.steampowered.CecDaemon1 /com/steampowered/CecDaemon1/Daemon com.steampowered.CecDaemon1.Daemon1 Wake";
       };
     };
   };
@@ -96,9 +143,12 @@ in {
     ip saddr { ${lib.concatStringsSep ", " ([home.subnet] ++ clients.${user.name})} } meta l4proto { tcp, udp } th dport 1714-1764 accept
   '';
 
-  powerManagement.resumeCommands = "${tv}/bin/tv keypress/PowerOn; ${tv}/bin/tv launch/tvinput.hdmi1";
-
   environment = {
+    etc."cecd/config.toml".source = (pkgs.formats.toml {}).generate "cecd.toml" {
+      osd_name = "catbox";
+      wake_tv = true;
+      suspend_tv = true;
+    };
     plasma6.excludePackages = with pkgs.kdePackages; [ark discover dolphin dolphin-plugins elisa gwenview khelpcenter konsole okular qrca spectacle];
     etc."xdg/applications-blacklistrc".text = lib.generators.toINI {} {
       # plasma-bigscreen will overwrite this blacklist unless we make it immutable
