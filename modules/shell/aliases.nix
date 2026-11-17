@@ -9,6 +9,7 @@
   }: let
     software = "${config.home.homeDirectory}/Projects/Software";
     drafts = "${software}/drafts";
+    mirrors = "/mnt/m1/shared/Mirrors";
     edit = dir: "cd ${dir} && hx .";
     ceremony = "d=$(mktemp -d /run/user/$UID/ceremony.XXX) && cd \"$d\"";
     city = lib.last (lib.splitString "/" (osConfig.time.timeZone or ""));
@@ -89,6 +90,7 @@
       ports = "ss -tunapl";
       listening = "ss -tlnp";
       netstat = "ss";
+      webmirror = "wget -m -np --no-if-modified-since -w 0.5 -P ${mirrors}";
     };
 
     utility = {
