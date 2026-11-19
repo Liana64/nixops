@@ -42,8 +42,15 @@ lock-review:
       .nodes as $old | $new[0].nodes | keys[] as $k
       | .[$k].locked as $n | ($old[$k].locked // {}) as $o
       | select($n.rev != null and $n.rev != $o.rev)
-      | "\($k)\t\($o.rev // "-" | .[:12]) → \($n.rev[:12])"
-        + if $n.type == "github" and $o.rev then "\thttps://github.com/\($n.owner)/\($n.repo)/compare/\($o.rev)...\($n.rev)" else "" end'
+      | [$k, $n.type, $n.url // "-", $o.rev // "-", $n.rev] | @tsv' |
+    while IFS="$(printf '\t')" read -r name type url old new; do
+      printf '%s %.12s → %.12s\n' "$name" "$old" "$new"
+      [ "$type" = git ] && [ "$old" != - ] || continue
+      repo=~/.cache/nix/gitv3/$(nix hash convert --hash-algo sha256 --to nix32 "$(printf %s "$url" | sha256sum | cut -d' ' -f1)")
+      if ! { git -C "$repo" cat-file -e "$old^{commit}" && git -C "$repo" cat-file -e "$new^{commit}"; } 2>/dev/null; then echo '  not in nix git cache'
+      elif ! git -C "$repo" merge-base --is-ancestor "$old" "$new"; then echo '  NOT A DESCENDANT: history rewound or force-pushed'
+      else git -C "$repo" log --format='  %h %G? %an %s' "$old..$new"; fi
+    done
 
 # Update flake input(s)
 [group('repo')]
