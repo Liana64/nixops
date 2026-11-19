@@ -50,6 +50,8 @@
       clip = "wl-copy";
       myip = "curl ifconfig.me -j";
       weather = "curl wttr.in/${city}";
+      tvon = "ssh catbox tv on";
+      tvoff = "ssh catbox tv off";
     };
 
     ai = {

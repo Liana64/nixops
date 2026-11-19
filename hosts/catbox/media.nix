@@ -1,5 +1,6 @@
 {
   config,
+  hardening,
   inputs,
   lib,
   pkgs,
@@ -8,7 +9,12 @@
 }: let
   inherit (inputs.self.network) home clients;
   tv = pkgs.writeShellScriptBin "tv" ''
-    exec ${pkgs.curl}/bin/curl -fsS -m 5 --retry 15 --retry-delay 1 --retry-all-errors -X POST "http://${inputs.self.network.home.hosts.tv}:8060/$1"
+    ecp() { ${pkgs.curl}/bin/curl -fsS -m 5 --retry 15 --retry-delay 1 --retry-all-errors -X POST "http://${home.hosts.tv}:8060/$1"; }
+    case $1 in
+      on) ecp keypress/PowerOn && ecp launch/tvinput.hdmi1 ;;
+      off) ecp keypress/PowerOff ;;
+      *) ecp "$1" ;;
+    esac
   '';
   tile = name: icon: exec:
     pkgs.makeDesktopItem {
@@ -87,13 +93,14 @@ in {
     };
     sunshine.settings.global_prep_cmd = builtins.toJSON [
       {
-        do = "${pkgs.writeShellScript "tv-off" "${tv}/bin/tv keypress/PowerOff || true"}";
+        do = "${pkgs.writeShellScript "tv-off" "${tv}/bin/tv off || true"}";
         undo = "";
       }
     ];
   };
 
   systemd = {
+    services."drkonqi-coredump-processor@".enable = false;
     user.services.tv-output = {
       description = "Scale the TV and mirror the Sunshine output onto it";
       wantedBy = ["plasma-workspace.target"];
@@ -127,15 +134,29 @@ in {
     tmpfiles.rules = [
       "D /home/home/.local/share/applications 0555 home users -"
       "L+ /usr/share/wallpapers - - - - /run/current-system/sw/share/wallpapers"
+      # config.d is read last, overriding what Steam writes to config.toml
+      "d /home/home/.config/cecd - home users -"
+      "L+ /home/home/.config/cecd/config.d/nixos.toml - - - - ${(pkgs.formats.toml {}).generate "cecd.toml" {
+        osd_name = "catbox";
+        suspend_tv = true;
+        allow_standby = false;
+      }}"
     ];
-    user.services.tv-input = {
+    services.tv-wake = {
       description = "Wake the TV and switch it to catbox";
-      wantedBy = ["cecd.service"];
-      after = ["cecd.service"];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${pkgs.systemd}/bin/busctl --user call com.steampowered.CecDaemon1 /com/steampowered/CecDaemon1/Daemon com.steampowered.CecDaemon1.Daemon1 Wake";
-      };
+      wantedBy = ["multi-user.target" "suspend.target"];
+      after = ["network-online.target" "suspend.target"];
+      wants = ["network-online.target"];
+      serviceConfig =
+        hardening.confined
+        // {
+          Type = "oneshot";
+          DynamicUser = true;
+          ExecStart = "${tv}/bin/tv on";
+          RestrictAddressFamilies = ["AF_INET"];
+          IPAddressDeny = "any";
+          IPAddressAllow = home.hosts.tv;
+        };
     };
   };
 
@@ -144,11 +165,6 @@ in {
   '';
 
   environment = {
-    etc."cecd/config.toml".source = (pkgs.formats.toml {}).generate "cecd.toml" {
-      osd_name = "catbox";
-      wake_tv = true;
-      suspend_tv = true;
-    };
     plasma6.excludePackages = with pkgs.kdePackages; [ark discover dolphin dolphin-plugins elisa gwenview khelpcenter konsole okular qrca spectacle];
     etc."xdg/applications-blacklistrc".text = lib.generators.toINI {} {
       # plasma-bigscreen will overwrite this blacklist unless we make it immutable
