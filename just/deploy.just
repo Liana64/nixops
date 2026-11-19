@@ -15,11 +15,16 @@ _nh verb host:
     command -v rebuild-track >/dev/null && set -- rebuild-track "${h:-$(hostname)} {{ verb }}" "$@"
     exec "$@"
 
-_lock-gate:
+_lock-check:
     #!/usr/bin/env sh
+    j="{{ just_executable() }} -f {{ justfile() }}"
+    tty= red= off=
+    [ -t 1 ] && tty=1
+    [ -t 2 ] && [ -z "${NO_COLOR-}" ] && red=$(printf '\033[31m') off=$(printf '\033[0m')
+    out=$(CLICOLOR_FORCE=$tty $j lock-review HEAD:) || { printf '%s\n' "$out"; echo "${red}flake.lock: git input failed verification${off}" >&2; exit 1; }
     git -C {{ nixops_path }} diff --quiet -- flake.lock && exit 0
-    {{ just_executable() }} -f {{ justfile() }} lock-review
-    echo 'flake.lock has unreviewed changes: review, then git add flake.lock' >&2
+    $j lock-review
+    echo "${red}flake.lock has unreviewed changes: review, then git add flake.lock${off}" >&2
     exit 1
 
 # Build and diff, local or remote
@@ -28,7 +33,7 @@ build host='': (_nh "build" host)
 
 # Build and switch, local or remote
 [group('deploy')]
-switch host='': _lock-gate (_nh "switch" host)
+switch host='': _lock-check (_nh "switch" host)
 
 # Build host's system and disko script on m1, pushing both to the cache
 [group('deploy')]
@@ -42,7 +47,7 @@ prebuild host:
 # Wipe and install host with the cwd included as --extra-files
 [confirm("wipe + install now?")]
 [group('deploy')]
-install host ip *args: _lock-gate (prebuild host)
+install host ip *args: _lock-check (prebuild host)
     #!/usr/bin/env sh
     set -eu
     d={{ invocation_directory() }}
