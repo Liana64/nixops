@@ -2,12 +2,25 @@
 {...}: {
   flake.modules.nixos.wireguard = {
     config,
+    inputs,
     pkgs,
     lib,
     hardening,
     ...
   }: let
-    wireguardConfigFile = "/var/secrets/wireguard/wg0.conf";
+    inherit (inputs.self.network) wg0;
+    peer = inputs.self.keys.wireguard.home.opnsense;
+    secret = name: config.sops.secrets."network/wireguard/${name}".path;
+    wireguardConfigFile = "${pkgs.writeTextDir "wg0.conf" ''
+      [Interface]
+      Address = ${wg0.hosts.${config.networking.hostName}}/32
+      DNS = ${wg0.gateway}
+      PostUp = ${pkgs.wireguard-tools}/bin/wg set %i private-key ${secret "private-key"} peer ${peer} preshared-key ${secret "preshared-key"} endpoint "$(<${secret "endpoint"})"
+
+      [Peer]
+      PublicKey = ${peer}
+      AllowedIPs = 0.0.0.0/0, ::/0
+    ''}/wg0.conf";
     trustedNetworksFile = "/var/secrets/wireguard/trusted-networks";
 
     # openresolv first: systemd's resolvconf symlink resolves to resolvectl
@@ -32,12 +45,6 @@
       # to affect the linux clients, it turns out that you need to reload the wireguard server
       # service whenever you add a new peer. I hope that this comment helps someone, somewhere,
       # so that you don't have to go through what I did to figure this out. It hurt.
-
-      networking.wg-quick.interfaces.wg0 = {
-        configFile = wireguardConfigFile;
-        listenPort = 51824;
-        autostart = false;
-      };
 
       # Connect to our VPN whenever we are on a network that isn't trusted. This isn't
       # entirely foolproof because someone could still spoof an SSID and BSSID, but it's

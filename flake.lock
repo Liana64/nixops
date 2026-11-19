@@ -548,11 +548,11 @@
     },
     "nixpkgs-firefox": {
       "locked": {
-        "lastModified": 1794165970,
-        "narHash": "sha256-XuAV2cUwaod3Bt4XFVqiXz3v1w2ex16W6Sv4S7EWres=",
+        "lastModified": 1794872590,
+        "narHash": "sha256-E+XLAfnC7+bdr4qlEgRv6cdGmiqTU5oeFNKCha7epqQ=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ac588ef1c914865dad517b337ea0eb9694a4021c",
+        "rev": "f68407657ad294471eb4b2e65d193df26edf729f",
         "type": "github"
       },
       "original": {
@@ -595,11 +595,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1794537146,
-        "narHash": "sha256-Wpz/7x/YWnDIBu7yj6ixe8j6fIMsidd9Y+o1PqPF3iM=",
+        "lastModified": 1794890597,
+        "narHash": "sha256-lME2lHoDHAaSHP3/okgiVoJ0icVEvsQH8LeU3We7tcc=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "d5cc6833999746cffdfe0598f7bc801a57b887a9",
+        "rev": "04906337b6d53e8bb0eaf0470ae9f070a4d4eb55",
         "type": "github"
       },
       "original": {
@@ -761,11 +761,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1794165900,
-        "narHash": "sha256-apWotBaK4r68qOc5TelAbpGcBaqUdC7O7Ym2JNu8YaQ=",
+        "lastModified": 1795128421,
+        "narHash": "sha256-UTkzxm7103XEGi2+IB+2DgMiaXs+rjtU8pFlhs5XtwE=",
         "ref": "refs/heads/main",
-        "rev": "9cfa48c8226fc732a1ce3820b388d6bd2e5e1e9b",
-        "revCount": 70,
+        "rev": "af5d811c1489035d27899760759f4b5a6768d345",
+        "revCount": 72,
         "type": "git",
         "url": "ssh://git@git.milberry.org/liana/secrets.git"
       },

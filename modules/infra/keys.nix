@@ -9,9 +9,13 @@
     hosts.m1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVbfbtER3foygqQS+WfewJ3LaGNtc1PRossXVAIilG3";
     # nixBuilder.framework = "TODO";
     wireguard = {
-      offsite-1 = "TODO";
-      framework = "TODO";
-      opnsense = "TODO";
+      offsite = {
+        offsite-1 = "TODO";
+        offsite-1-unlock = "TODO";
+        framework = "TODO";
+        opnsense = "TODO";
+      };
+      home.opnsense = "10x88z88CTIbcM+q+c39BZWqzg3hb8o7Z0xzffEfuHw=";
     };
     "${user.name}Gpg" = ''
 

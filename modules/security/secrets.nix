@@ -48,10 +48,9 @@
       sops.secrets = lib.mkMerge [
         {"users/${user.name}/password".neededForUsers = true;}
         (lib.mkIf config.machineSecrets ({
-            "network/wireguard/wg0.conf" = {
-              path = "/var/secrets/wireguard/wg0.conf";
-              mode = "0400";
-            };
+            "network/wireguard/private-key" = {};
+            "network/wireguard/preshared-key" = {};
+            "network/wireguard/endpoint" = {};
             "network/wireguard/trusted-networks" = {
               path = "/var/secrets/wireguard/trusted-networks";
               mode = "0400";

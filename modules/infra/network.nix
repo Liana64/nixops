@@ -55,11 +55,18 @@
       };
       socksPort = 1080;
     };
+    wg0 = {
+      subnet = "172.17.0.0/24";
+      gateway = "172.17.0.1";
+      hosts.framework = "172.17.0.91";
+    };
     offsite = lan {
       subnet = "172.16.150.0/24";
       port = 51820;
+      unlockPort = 2134;
       hosts = {
         offsite-1 = "172.16.150.1";
+        offsite-1-unlock = "172.16.150.11";
         opnsense = "172.16.150.2";
         framework = "172.16.150.30";
       };
