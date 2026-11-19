@@ -33,6 +33,18 @@ check: verify
     nix eval --json {{ nixops_path }}#checks.{{ system }} --apply builtins.attrNames \
       | jq -r '.[] | "{{ nixops_path }}#checks.{{ system }}.\(.)"' | xargs -r nix build --no-link
 
+# Diff flake.lock inputs against the index (staged = reviewed)
+[group('repo')]
+lock-review:
+    #!/usr/bin/env sh
+    cd {{ nixops_path }}
+    git show :flake.lock | jq -r --slurpfile new flake.lock '
+      .nodes as $old | $new[0].nodes | keys[] as $k
+      | .[$k].locked as $n | ($old[$k].locked // {}) as $o
+      | select($n.rev != null and $n.rev != $o.rev)
+      | "\($k)\t\($o.rev // "-" | .[:12]) → \($n.rev[:12])"
+        + if $n.type == "github" and $o.rev then "\thttps://github.com/\($n.owner)/\($n.repo)/compare/\($o.rev)...\($n.rev)" else "" end'
+
 # Update flake input(s)
 [group('repo')]
 update *inputs:

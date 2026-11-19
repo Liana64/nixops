@@ -96,7 +96,7 @@
   hosts = {
     framework = {
       system = "x86_64-linux";
-      aspects = laptop ++ ["maintenanceNotify" "perfTools" "remoteBuilds"];
+      aspects = laptop ++ ["flakeUpdate" "maintenanceNotify" "perfTools" "remoteBuilds"];
     };
     portable = {
       system = "x86_64-linux";
@@ -177,7 +177,7 @@
     channel ? nixpkgs,
   }:
     channel.lib.nixosSystem {
-      specialArgs = {inherit inputs hardening user;};
+      specialArgs = {inherit inputs hardening user flakePath;};
       modules =
         lib.attrVals aspects config.flake.modules.nixos
         ++ ["${self}/hosts/${name}/options.nix"]

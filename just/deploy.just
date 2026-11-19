@@ -15,13 +15,20 @@ _nh verb host:
     command -v rebuild-track >/dev/null && set -- rebuild-track "${h:-$(hostname)} {{ verb }}" "$@"
     exec "$@"
 
+_lock-gate:
+    #!/usr/bin/env sh
+    git -C {{ nixops_path }} diff --quiet -- flake.lock && exit 0
+    {{ just_executable() }} -f {{ justfile() }} lock-review
+    echo 'flake.lock has unreviewed changes: review, then git add flake.lock' >&2
+    exit 1
+
 # Build and diff, local or remote
 [group('deploy')]
 build host='': (_nh "build" host)
 
 # Build and switch, local or remote
 [group('deploy')]
-switch host='': (_nh "switch" host)
+switch host='': _lock-gate (_nh "switch" host)
 
 # Build host's system and disko script on m1, pushing both to the cache
 [group('deploy')]
@@ -35,7 +42,7 @@ prebuild host:
 # Wipe and install host with the cwd included as --extra-files
 [confirm("wipe + install now?")]
 [group('deploy')]
-install host ip *args: (prebuild host)
+install host ip *args: _lock-gate (prebuild host)
     #!/usr/bin/env sh
     set -eu
     d={{ invocation_directory() }}
