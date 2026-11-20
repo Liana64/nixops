@@ -10,17 +10,8 @@
   }: let
     inherit (inputs.self.network) wg0;
     peer = inputs.self.keys.wireguard.home.opnsense;
-    secret = name: config.sops.secrets."network/wireguard/${name}".path;
-    wireguardConfigFile = "${pkgs.writeTextDir "wg0.conf" ''
-      [Interface]
-      Address = ${wg0.hosts.${config.networking.hostName}}/32
-      DNS = ${wg0.gateway}
-      PostUp = ${pkgs.wireguard-tools}/bin/wg set %i private-key ${secret "private-key"} peer ${peer} preshared-key ${secret "preshared-key"} endpoint "$(<${secret "endpoint"})"
-
-      [Peer]
-      PublicKey = ${peer}
-      AllowedIPs = 0.0.0.0/0, ::/0
-    ''}/wg0.conf";
+    secret = name: config.sops.placeholder."network/wireguard/${name}";
+    wireguardConfigFile = config.sops.templates."wg0.conf".path;
     trustedNetworksFile = "/var/secrets/wireguard/trusted-networks";
 
     # openresolv first: systemd's resolvconf symlink resolves to resolvectl
@@ -41,6 +32,19 @@
       + builtins.readFile ../../modules/bin/wireguard-autoconnect);
   in
     lib.mkIf config.machineSecrets {
+      sops.templates."wg0.conf".content = ''
+        [Interface]
+        Address = ${wg0.hosts.${config.networking.hostName}}/32
+        DNS = ${wg0.gateway}
+        PrivateKey = ${secret "private-key"}
+
+        [Peer]
+        PublicKey = ${peer}
+        PresharedKey = ${secret "preshared-key"}
+        Endpoint = ${secret "endpoint"}
+        AllowedIPs = 0.0.0.0/0, ::/0
+      '';
+
       # After spending a lot of time troubleshooting issues with wireguard that only seemed
       # to affect the linux clients, it turns out that you need to reload the wireguard server
       # service whenever you add a new peer. I hope that this comment helps someone, somewhere,
