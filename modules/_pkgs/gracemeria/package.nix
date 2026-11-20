@@ -6,51 +6,70 @@
   makeDesktopItem,
   symlinkJoin,
   writeShellApplication,
-  formats,
   bubblewrap,
   alsa-lib,
   dbus,
-  glib,
-  gtk3,
+  libglvnd,
   libpulseaudio,
   libusb1,
   pipewire,
   systemdLibs,
   vulkan-loader,
   libx11,
-  libxcb,
-  zlib,
+  libxcursor,
+  libxext,
+  libxfixes,
+  libxi,
+  libxrandr,
+  libxscrnsaver,
   closureInfo,
   roots ? [],
   games,
 }: let
-  pname = "ac6recomp";
+  pname = "gracemeria";
   version = "1.0.0";
-
-  config = (formats.toml {}).generate "ac6recomp.toml" {
-    fullscreen = true;
-    draw_resolution_scale_x = 2;
-    draw_resolution_scale_y = 2;
-    log_file = "ac6recomp.log";
-  };
+  exe = "AceCombat6";
 
   unwrapped = stdenv.mkDerivation {
     pname = "${pname}-unwrapped";
     inherit version;
     src = fetchurl {
-      url = "https://github.com/termuxuser123/AC6_recomp/releases/download/v${version}/ac6recomp-linux-x86_64.tar.gz";
-      hash = "sha256-Tf4S3cm+yU9N/kKRkAGpKvvDI4J5LFfUORt28DVQiFw=";
+      url = "https://github.com/Dipshet/GracemeriaRecomp/releases/download/v${version}/GracemeriaRecomp-${version}-linux-x64.tar.gz";
+      hash = "sha256-uMqjF4riky6mUKAF/ZCcFgbL3Cf3RcnAzYJy4+VhprQ=";
     };
+    sourceRoot = ".";
 
     nativeBuildInputs = [autoPatchelfHook];
-    buildInputs = [alsa-lib glib gtk3 libpulseaudio libusb1 pipewire stdenv.cc.cc.lib libx11 libxcb zlib];
-    runtimeDependencies = map lib.getLib [dbus systemdLibs vulkan-loader];
-    autoPatchelfIgnoreMissingDeps = ["libjack.so.0" "libsndio.so.7" "libsteam_api.so"];
+    buildInputs = map lib.getLib [
+      stdenv.cc.cc
+      alsa-lib
+      dbus
+      libglvnd
+      libpulseaudio
+      libusb1
+      pipewire
+      systemdLibs
+      vulkan-loader
+      libx11
+      libxcursor
+      libxext
+      libxfixes
+      libxi
+      libxrandr
+      libxscrnsaver
+    ];
+    autoPatchelfIgnoreMissingDeps = [
+      "libdrm.so.2"
+      "libfribidi.so.0"
+      "libGLES_CM.so.1"
+      "libjack.so.0"
+      "libsteam_api.so"
+      "libthai.so.0"
+      "libXtst.so.6"
+    ];
 
     installPhase = ''
-      install -Dm555 ac6recomp -t $out/libexec
-      install -Dm444 gamecontrollerdb.txt -t $out/libexec
-      install -Dm444 ${config} $out/libexec/ac6recomp.toml
+      install -Dm555 ${exe} -t $out/libexec
     '';
   };
 
@@ -59,10 +78,11 @@
     runtimeInputs = [bubblewrap];
     text = ''
       data="''${XDG_DATA_HOME:-$HOME/.local/share}"
-      dir="$data/ac6recomp"
-      mkdir -p "$dir"
+      dir="$data/${pname}"
+      games=${lib.escapeShellArg games}
+      mkdir -p "$dir" "$games/saves"
       shopt -s nullglob
-      isos=(${lib.escapeShellArg games}/*.iso)
+      isos=("$games"/*.iso)
       run="''${XDG_RUNTIME_DIR:?}"
       env=()
       for v in DISPLAY XAUTHORITY LANG "''${!SDL_@}"; do
@@ -92,14 +112,18 @@
         --ro-bind-try "$run/pulse" "$run/pulse" \
         ''${XAUTHORITY:+--ro-bind "$XAUTHORITY" "$XAUTHORITY"} \
         --bind "$dir" "$dir" \
-        --bind ${lib.escapeShellArg games} ${lib.escapeShellArg games} \
+        --ro-bind ${unwrapped}/libexec/${exe} "$dir/${exe}" \
+        --bind "$games" "$games" \
         --chdir "$dir" \
         --setenv HOME "$dir" \
         --setenv XDG_DATA_HOME "$data" \
         --setenv XDG_RUNTIME_DIR "$run" \
         --setenv PATH /var/empty \
+        --setenv AC6_CHECK_UPDATES 0 \
+        --setenv AC6_SAVE_DIR "$games/saves" \
+        ''${isos[0]:+--setenv AC6_ISO "''${isos[0]}"} \
         "''${env[@]}" \
-        -- ${unwrapped}/libexec/ac6recomp "''${isos[0]:-$dir/assets}" --user_data_root ${lib.escapeShellArg games} "$@"
+        -- "$dir/${exe}" "$@"
     '';
   };
 in
@@ -116,9 +140,9 @@ in
     ];
 
     meta = {
-      description = "Static recompilation of Ace Combat 6, confined with bubblewrap";
-      homepage = "https://github.com/termuxuser123/AC6_recomp";
-      license = lib.licenses.bsd3;
+      description = "GracemeriaRecomp, a static recompilation of Ace Combat 6, confined with bubblewrap";
+      homepage = "https://github.com/Dipshet/GracemeriaRecomp";
+      license = lib.licenses.gpl3Only;
       platforms = ["x86_64-linux"];
       mainProgram = pname;
     };

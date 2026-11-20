@@ -21,7 +21,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    (callPackage ../../modules/_pkgs/ac6recomp/package.nix {
+    (callPackage ../../modules/_pkgs/gracemeria/package.nix {
       roots = [
         config.systemd.tmpfiles.settings.graphics-driver."/run/opengl-driver"."L+".argument
         config.environment.etc.fonts.source
